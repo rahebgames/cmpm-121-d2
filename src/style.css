@@ -1,5 +1,16 @@
-.icon {
-  width: 64px;
-  vertical-align: top;
-  border: 1px solid salmon;
+#flexbox {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+#sketchpad {
+  border: 1px solid black;
+  width: 256px;
+  height: 256px;
+  border-radius: 10px;
+  box-shadow: 5px 5px 5px black;
 }

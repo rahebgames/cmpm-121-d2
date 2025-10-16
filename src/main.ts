@@ -1,6 +1,8 @@
-import exampleIconUrl from "./noun-paperclip-7598668-00449F.png";
 import "./style.css";
 
 document.body.innerHTML = `
-  <p>Example image asset: <img src="${exampleIconUrl}" class="icon" /></p>
+  <div id="flexbox">
+    <h1>Sticker Sketchpad</h1>
+    <canvas id="sketchpad"></canvas>
+  </div>
 `;
