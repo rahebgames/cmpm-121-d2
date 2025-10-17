@@ -6,6 +6,7 @@ interface Point {
 }
 
 const LINES: Point[][] = [];
+const REDO_LINES: Point[][] = [];
 let currentLine: Point[] | null = null;
 
 const REDRAW_EVENT = new Event("drawing-changed");
@@ -34,6 +35,7 @@ CANVAS.addEventListener("mousedown", (e) => {
 
   currentLine = [];
   LINES.push(currentLine);
+  REDO_LINES.splice(0, REDO_LINES.length);
   currentLine.push({ x: CURSOR.x, y: CURSOR.y });
 
   CANVAS.dispatchEvent(REDRAW_EVENT);
@@ -73,12 +75,41 @@ CANVAS.addEventListener("drawing-changed", () => {
   }
 });
 
+FLEXBOX.append(document.createElement("br"));
+
+const BUTTON_FLEXBOX = document.createElement("div");
+BUTTON_FLEXBOX.id = "button-flexbox";
+FLEXBOX.appendChild(BUTTON_FLEXBOX);
+
 const CLEAR_BUTTON = document.createElement("button");
 CLEAR_BUTTON.innerHTML = "clear";
-CLEAR_BUTTON.id = "clear_button";
-FLEXBOX.append(CLEAR_BUTTON);
+BUTTON_FLEXBOX.append(CLEAR_BUTTON);
 
 CLEAR_BUTTON.addEventListener("click", () => {
   LINES.splice(0, LINES.length);
   CANVAS.dispatchEvent(REDRAW_EVENT);
+});
+
+const UNDO_BUTTON = document.createElement("button");
+UNDO_BUTTON.innerHTML = "undo";
+BUTTON_FLEXBOX.append(UNDO_BUTTON);
+
+UNDO_BUTTON.addEventListener("click", () => {
+  if (LINES.length > 0) {
+    const LAST_LINE = LINES.pop();
+    if (LAST_LINE != undefined) REDO_LINES.push(LAST_LINE);
+    CANVAS.dispatchEvent(REDRAW_EVENT);
+  }
+});
+
+const REDO_BUTTON = document.createElement("button");
+REDO_BUTTON.innerHTML = "redo";
+BUTTON_FLEXBOX.append(REDO_BUTTON);
+
+REDO_BUTTON.addEventListener("click", () => {
+  if (REDO_LINES.length > 0) {
+    const LAST_LINE = REDO_LINES.pop();
+    if (LAST_LINE != undefined) LINES.push(LAST_LINE);
+    CANVAS.dispatchEvent(REDRAW_EVENT);
+  }
 });

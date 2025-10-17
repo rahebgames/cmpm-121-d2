@@ -13,6 +13,10 @@
   box-shadow: 5px 5px 5px black;
 }
 
-#clear_button {
-  top: 100px;
+#button-flexbox {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
 }
