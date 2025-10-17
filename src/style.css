@@ -9,8 +9,10 @@
 
 #sketchpad {
   border: 1px solid black;
-  width: 256px;
-  height: 256px;
   border-radius: 10px;
   box-shadow: 5px 5px 5px black;
+}
+
+#clear_button {
+  top: 100px;
 }
