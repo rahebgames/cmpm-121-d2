@@ -1,5 +1,15 @@
 import "./style.css";
 
+interface Point {
+  x: number;
+  y: number;
+}
+
+const LINES: Point[][] = [];
+let currentLine: Point[] | null = null;
+
+const REDRAW_EVENT = new Event("drawing-changed");
+
 const FLEXBOX = document.createElement("div");
 FLEXBOX.id = "flexbox";
 document.body.appendChild(FLEXBOX);
@@ -21,21 +31,46 @@ CANVAS.addEventListener("mousedown", (e) => {
   CURSOR.active = true;
   CURSOR.x = e.offsetX;
   CURSOR.y = e.offsetY;
+
+  currentLine = [];
+  LINES.push(currentLine);
+  currentLine.push({ x: CURSOR.x, y: CURSOR.y });
+
+  CANVAS.dispatchEvent(REDRAW_EVENT);
 });
 
 CANVAS.addEventListener("mousemove", (e) => {
   if (CURSOR.active && CONTEXT != null) {
-    CONTEXT.beginPath();
-    CONTEXT.moveTo(CURSOR.x, CURSOR.y);
-    CONTEXT.lineTo(e.offsetX, e.offsetY);
-    CONTEXT.stroke();
     CURSOR.x = e.offsetX;
     CURSOR.y = e.offsetY;
+
+    if (currentLine != null) currentLine.push({ x: CURSOR.x, y: CURSOR.y });
+    else currentLine = [{ x: CURSOR.x, y: CURSOR.y }];
+    CANVAS.dispatchEvent(REDRAW_EVENT);
   }
 });
 
 CANVAS.addEventListener("mouseup", (_e) => {
   CURSOR.active = false;
+  currentLine = null;
+  CANVAS.dispatchEvent(REDRAW_EVENT);
+});
+
+CANVAS.addEventListener("drawing-changed", () => {
+  if (CONTEXT != null) {
+    CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
+    for (const LINE of LINES) {
+      if (LINE.length > 1) {
+        CONTEXT.beginPath();
+        const { x, y } = LINE[0];
+        CONTEXT.moveTo(x, y);
+        for (const { x, y } of LINE) {
+          CONTEXT.lineTo(x, y);
+        }
+        CONTEXT.stroke();
+      }
+    }
+  }
 });
 
 const CLEAR_BUTTON = document.createElement("button");
@@ -44,5 +79,6 @@ CLEAR_BUTTON.id = "clear_button";
 FLEXBOX.append(CLEAR_BUTTON);
 
 CLEAR_BUTTON.addEventListener("click", () => {
-  if (CONTEXT != null) CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
+  LINES.splice(0, LINES.length);
+  CANVAS.dispatchEvent(REDRAW_EVENT);
 });
