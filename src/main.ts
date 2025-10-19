@@ -1,13 +1,13 @@
 import "./style.css";
 
-interface Point {
-  x: number;
-  y: number;
+interface DrawCommand {
+  display(ctx: CanvasRenderingContext2D): void;
+  addPoint(x: number, y: number): void;
 }
 
-const LINES: Point[][] = [];
-const REDO_LINES: Point[][] = [];
-let currentLine: Point[] | null = null;
+const DRAWINGS: DrawCommand[] = [];
+const REDO_DRAWINGS: DrawCommand[] = [];
+let currentLine: DrawCommand | null = null;
 
 const REDRAW_EVENT = new Event("drawing-changed");
 
@@ -19,24 +19,55 @@ const TITLE = document.createElement("h1");
 TITLE.textContent = "Sticker Sketchpad";
 FLEXBOX.appendChild(TITLE);
 
+const CANVAS_SIZE = 256;
 const CANVAS = document.createElement("canvas");
 CANVAS.id = "sketchpad";
-CANVAS.width = 256;
-CANVAS.height = 256;
+CANVAS.width = CANVAS_SIZE;
+CANVAS.height = CANVAS_SIZE;
 FLEXBOX.appendChild(CANVAS);
 
 const CONTEXT = CANVAS.getContext("2d");
 const CURSOR = { active: false, x: 0, y: 0 };
+
+function createDrawing(): DrawCommand {
+  const NEW_CANVAS = document.createElement("canvas");
+  NEW_CANVAS.width = CANVAS_SIZE;
+  NEW_CANVAS.height = CANVAS_SIZE;
+  const NEW_CONTEXT = NEW_CANVAS.getContext("2d")!;
+  NEW_CONTEXT.lineWidth = 2;
+  NEW_CONTEXT.strokeStyle = "black";
+
+  let drawing = false;
+
+  return {
+    addPoint(x: number, y: number) {
+      if (!drawing) {
+        NEW_CONTEXT.beginPath();
+        NEW_CONTEXT.moveTo(x, y);
+        drawing = true;
+      } else {
+        NEW_CONTEXT.lineTo(x, y);
+        NEW_CONTEXT.stroke();
+      }
+    },
+
+    display(ctx: CanvasRenderingContext2D) {
+      ctx.drawImage(NEW_CANVAS, 0, 0);
+    },
+  };
+}
 
 CANVAS.addEventListener("mousedown", (e) => {
   CURSOR.active = true;
   CURSOR.x = e.offsetX;
   CURSOR.y = e.offsetY;
 
-  currentLine = [];
-  LINES.push(currentLine);
-  REDO_LINES.splice(0, REDO_LINES.length);
-  currentLine.push({ x: CURSOR.x, y: CURSOR.y });
+  const LINE = createDrawing();
+  LINE.addPoint(CURSOR.x, CURSOR.y);
+  currentLine = LINE;
+
+  DRAWINGS.push(LINE);
+  REDO_DRAWINGS.length = 0;
 
   CANVAS.dispatchEvent(REDRAW_EVENT);
 });
@@ -46,8 +77,9 @@ CANVAS.addEventListener("mousemove", (e) => {
     CURSOR.x = e.offsetX;
     CURSOR.y = e.offsetY;
 
-    if (currentLine != null) currentLine.push({ x: CURSOR.x, y: CURSOR.y });
-    else currentLine = [{ x: CURSOR.x, y: CURSOR.y }];
+    if (currentLine == null) currentLine = createDrawing();
+    currentLine.addPoint(CURSOR.x, CURSOR.y);
+
     CANVAS.dispatchEvent(REDRAW_EVENT);
   }
 });
@@ -61,17 +93,7 @@ CANVAS.addEventListener("mouseup", (_e) => {
 CANVAS.addEventListener("drawing-changed", () => {
   if (CONTEXT != null) {
     CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
-    for (const LINE of LINES) {
-      if (LINE.length > 1) {
-        CONTEXT.beginPath();
-        const { x, y } = LINE[0];
-        CONTEXT.moveTo(x, y);
-        for (const { x, y } of LINE) {
-          CONTEXT.lineTo(x, y);
-        }
-        CONTEXT.stroke();
-      }
-    }
+    for (const DRAWING of DRAWINGS) DRAWING.display(CONTEXT);
   }
 });
 
@@ -86,7 +108,7 @@ CLEAR_BUTTON.innerHTML = "clear";
 BUTTON_FLEXBOX.append(CLEAR_BUTTON);
 
 CLEAR_BUTTON.addEventListener("click", () => {
-  LINES.splice(0, LINES.length);
+  DRAWINGS.length = 0;
   CANVAS.dispatchEvent(REDRAW_EVENT);
 });
 
@@ -95,9 +117,9 @@ UNDO_BUTTON.innerHTML = "undo";
 BUTTON_FLEXBOX.append(UNDO_BUTTON);
 
 UNDO_BUTTON.addEventListener("click", () => {
-  if (LINES.length > 0) {
-    const LAST_LINE = LINES.pop();
-    if (LAST_LINE != undefined) REDO_LINES.push(LAST_LINE);
+  if (DRAWINGS.length > 0) {
+    const LAST_DRAWING = DRAWINGS.pop();
+    if (LAST_DRAWING) REDO_DRAWINGS.push(LAST_DRAWING);
     CANVAS.dispatchEvent(REDRAW_EVENT);
   }
 });
@@ -107,9 +129,9 @@ REDO_BUTTON.innerHTML = "redo";
 BUTTON_FLEXBOX.append(REDO_BUTTON);
 
 REDO_BUTTON.addEventListener("click", () => {
-  if (REDO_LINES.length > 0) {
-    const LAST_LINE = REDO_LINES.pop();
-    if (LAST_LINE != undefined) LINES.push(LAST_LINE);
+  if (REDO_DRAWINGS.length > 0) {
+    const LAST_DRAWING = REDO_DRAWINGS.pop();
+    if (LAST_DRAWING) DRAWINGS.push(LAST_DRAWING);
     CANVAS.dispatchEvent(REDRAW_EVENT);
   }
 });
