@@ -2,7 +2,7 @@ import "./style.css";
 
 interface DrawCommand {
   display(ctx: CanvasRenderingContext2D): void;
-  addPoint(x: number, y: number): void;
+  drag(x: number, y: number): void;
 }
 
 const DRAWINGS: DrawCommand[] = [];
@@ -29,7 +29,8 @@ FLEXBOX.appendChild(CANVAS);
 const CONTEXT = CANVAS.getContext("2d");
 const CURSOR = { active: false, x: 0, y: 0 };
 
-function createDrawing(): DrawCommand {
+// constructor
+function createDrawCommand(x: number, y: number): DrawCommand {
   const NEW_CANVAS = document.createElement("canvas");
   NEW_CANVAS.width = CANVAS_SIZE;
   NEW_CANVAS.height = CANVAS_SIZE;
@@ -37,18 +38,13 @@ function createDrawing(): DrawCommand {
   NEW_CONTEXT.lineWidth = 2;
   NEW_CONTEXT.strokeStyle = "black";
 
-  let drawing = false;
+  NEW_CONTEXT.beginPath();
+  NEW_CONTEXT.moveTo(x, y);
 
   return {
-    addPoint(x: number, y: number) {
-      if (!drawing) {
-        NEW_CONTEXT.beginPath();
-        NEW_CONTEXT.moveTo(x, y);
-        drawing = true;
-      } else {
-        NEW_CONTEXT.lineTo(x, y);
-        NEW_CONTEXT.stroke();
-      }
+    drag(x: number, y: number) {
+      NEW_CONTEXT.lineTo(x, y);
+      NEW_CONTEXT.stroke();
     },
 
     display(ctx: CanvasRenderingContext2D) {
@@ -57,13 +53,12 @@ function createDrawing(): DrawCommand {
   };
 }
 
-CANVAS.addEventListener("mousedown", (e) => {
+CANVAS.addEventListener("pointerdown", (e) => {
   CURSOR.active = true;
   CURSOR.x = e.offsetX;
   CURSOR.y = e.offsetY;
 
-  const LINE = createDrawing();
-  LINE.addPoint(CURSOR.x, CURSOR.y);
+  const LINE = createDrawCommand(CURSOR.x, CURSOR.y);
   currentLine = LINE;
 
   DRAWINGS.push(LINE);
@@ -72,19 +67,20 @@ CANVAS.addEventListener("mousedown", (e) => {
   CANVAS.dispatchEvent(REDRAW_EVENT);
 });
 
-CANVAS.addEventListener("mousemove", (e) => {
+CANVAS.addEventListener("pointermove", (e) => {
   if (CURSOR.active && CONTEXT != null) {
     CURSOR.x = e.offsetX;
     CURSOR.y = e.offsetY;
 
-    if (currentLine == null) currentLine = createDrawing();
-    currentLine.addPoint(CURSOR.x, CURSOR.y);
+    if (currentLine == null) {
+      currentLine = createDrawCommand(CURSOR.x, CURSOR.y);
+    } else currentLine.drag(CURSOR.x, CURSOR.y);
 
     CANVAS.dispatchEvent(REDRAW_EVENT);
   }
 });
 
-CANVAS.addEventListener("mouseup", (_e) => {
+CANVAS.addEventListener("pointerup", (_e) => {
   CURSOR.active = false;
   currentLine = null;
   CANVAS.dispatchEvent(REDRAW_EVENT);
