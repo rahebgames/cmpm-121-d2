@@ -1,10 +1,36 @@
-#flexbox {
+#outer-flexbox {
   position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   width: 100%;
+  font-family: "Comic Sans MS";
+}
+
+#left-button-flexbox {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.75rem;
+}
+
+#canvas-flexbox {
+  position: relative;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+}
+
+#right-button-flexbox {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 0.75rem;
 }
 
 #sketchpad {
@@ -13,10 +39,9 @@
   box-shadow: 5px 5px 5px black;
 }
 
-#button-flexbox {
-  position: relative;
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
+.button {
+  font-family: "Comic Sans MS";
+  font-size: large;
+  height: 64px;
+  width: 64px;
 }
