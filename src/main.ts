@@ -5,13 +5,24 @@ interface DrawCommand {
   drag(x: number, y: number): void;
 }
 
+interface CursorCommand {
+  x: number;
+  y: number;
+  canvas: HTMLCanvasElement;
+  context: CanvasRenderingContext2D;
+  draw(ctx: CanvasRenderingContext2D): void;
+}
+
 let lineThickness: number = 2;
 
 const DRAWINGS: DrawCommand[] = [];
 const REDO_DRAWINGS: DrawCommand[] = [];
 let currentLine: DrawCommand | null = null;
 
+let cursorCommand: CursorCommand | null = null;
+
 const REDRAW_EVENT = new Event("drawing-changed");
+const MOVE_EVENT = new Event("tool-moved");
 
 const OUTER_FLEXBOX = document.createElement("div");
 OUTER_FLEXBOX.id = "outer-flexbox";
@@ -42,9 +53,14 @@ CANVAS_FLEXBOX.appendChild(RIGHT_BUTTON_FLEXBOX);
 
 const CONTEXT = CANVAS.getContext("2d");
 const CURSOR = { active: false, x: 0, y: 0 };
+CANVAS.style.cursor = "none";
 
-// constructor
-function createDrawCommand(x: number, y: number, thickness: number): DrawCommand {
+// draw constructor
+function createDrawCommand(
+  x: number,
+  y: number,
+  thickness: number,
+): DrawCommand {
   const NEW_CANVAS = document.createElement("canvas");
   NEW_CANVAS.width = CANVAS_SIZE;
   NEW_CANVAS.height = CANVAS_SIZE;
@@ -67,6 +83,50 @@ function createDrawCommand(x: number, y: number, thickness: number): DrawCommand
   };
 }
 
+function createCursorCommand(
+  new_x: number,
+  new_y: number,
+): CursorCommand {
+  const NEW_CANVAS = document.createElement("canvas");
+  NEW_CANVAS.width = CANVAS_SIZE;
+  NEW_CANVAS.height = CANVAS_SIZE;
+  const NEW_CONTEXT = NEW_CANVAS.getContext("2d")!;
+  console.log(NEW_CONTEXT);
+
+  return {
+    x: new_x,
+    y: new_y,
+    canvas: NEW_CANVAS,
+    context: NEW_CONTEXT,
+
+    draw(ctx: CanvasRenderingContext2D) {
+      CANVAS.dispatchEvent(REDRAW_EVENT);
+      this.context.clearRect(0, 0, CANVAS.width, CANVAS.height);
+      this.context.beginPath();
+      this.context.arc(this.x, this.y, 10, 0, 2 * Math.PI, false);
+      this.context.lineWidth = lineThickness;
+      this.context.stroke();
+      ctx.drawImage(this.canvas, 0, 0);
+    },
+  };
+}
+
+CANVAS.addEventListener("tool-moved", () => {
+  if (cursorCommand != null && CONTEXT != null) {
+    cursorCommand.draw(CONTEXT);
+  }
+});
+
+CANVAS.addEventListener("pointerenter", (e) => {
+  cursorCommand = createCursorCommand(e.offsetX, e.offsetY);
+  CANVAS.dispatchEvent(MOVE_EVENT);
+});
+
+CANVAS.addEventListener("pointerout", (_e) => {
+  cursorCommand = null;
+  CANVAS.dispatchEvent(MOVE_EVENT);
+});
+
 CANVAS.addEventListener("pointerdown", (e) => {
   CURSOR.active = true;
   CURSOR.x = e.offsetX;
@@ -82,15 +142,25 @@ CANVAS.addEventListener("pointerdown", (e) => {
 });
 
 CANVAS.addEventListener("pointermove", (e) => {
-  if (CURSOR.active && CONTEXT != null) {
-    CURSOR.x = e.offsetX;
-    CURSOR.y = e.offsetY;
+  if (cursorCommand == null) {
+    cursorCommand = createCursorCommand(e.offsetX, e.offsetY);
+  } else {
+    cursorCommand.x = e.offsetX;
+    cursorCommand.y = e.offsetY;
+  }
+  CANVAS.dispatchEvent(MOVE_EVENT);
 
-    if (currentLine == null) {
-      currentLine = createDrawCommand(CURSOR.x, CURSOR.y, lineThickness);
-    } else currentLine.drag(CURSOR.x, CURSOR.y);
+  if (CURSOR.active) {
+    if (CONTEXT != null) {
+      CURSOR.x = e.offsetX;
+      CURSOR.y = e.offsetY;
 
-    CANVAS.dispatchEvent(REDRAW_EVENT);
+      if (currentLine == null) {
+        currentLine = createDrawCommand(CURSOR.x, CURSOR.y, lineThickness);
+      } else currentLine.drag(CURSOR.x, CURSOR.y);
+
+      CANVAS.dispatchEvent(REDRAW_EVENT);
+    }
   }
 });
 
