@@ -17,9 +17,10 @@ let lineThickness: number = 2;
 
 const DRAWINGS: DrawCommand[] = [];
 const REDO_DRAWINGS: DrawCommand[] = [];
-let currentLine: DrawCommand | null = null;
+let currentDrawing: DrawCommand | null = null;
 
 let cursorCommand: CursorCommand | null = null;
+let sticker: string = "";
 
 const REDRAW_EVENT = new Event("drawing-changed");
 const MOVE_EVENT = new Event("tool-moved");
@@ -55,8 +56,8 @@ const CONTEXT = CANVAS.getContext("2d");
 const CURSOR = { active: false, x: 0, y: 0 };
 CANVAS.style.cursor = "none";
 
-// draw constructor
-function createDrawCommand(
+// line constructor
+function createLineCommand(
   x: number,
   y: number,
   thickness: number,
@@ -83,6 +84,34 @@ function createDrawCommand(
   };
 }
 
+// emoji constructor
+function createStickerCommand(
+  x: number,
+  y: number,
+  sticker: string,
+): DrawCommand {
+  const NEW_CANVAS = document.createElement("canvas");
+  NEW_CANVAS.width = CANVAS_SIZE;
+  NEW_CANVAS.height = CANVAS_SIZE;
+  const NEW_CONTEXT = NEW_CANVAS.getContext("2d")!;
+
+  NEW_CONTEXT.font = "32px monospace";
+  NEW_CONTEXT.fillText(sticker, x - 8, y + 16);
+
+  return {
+    drag(new_x: number, new_y: number) {
+      NEW_CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
+      NEW_CONTEXT.fillText(sticker, new_x - 8, new_y + 16);
+      CANVAS.dispatchEvent(REDRAW_EVENT);
+    },
+
+    display(ctx: CanvasRenderingContext2D) {
+      ctx.drawImage(NEW_CANVAS, 0, 0);
+    },
+  };
+}
+
+// cursor constructor
 function createCursorCommand(
   new_x: number,
   new_y: number,
@@ -91,7 +120,6 @@ function createCursorCommand(
   NEW_CANVAS.width = CANVAS_SIZE;
   NEW_CANVAS.height = CANVAS_SIZE;
   const NEW_CONTEXT = NEW_CANVAS.getContext("2d")!;
-  console.log(NEW_CONTEXT);
 
   return {
     x: new_x,
@@ -102,18 +130,24 @@ function createCursorCommand(
     draw(ctx: CanvasRenderingContext2D) {
       CANVAS.dispatchEvent(REDRAW_EVENT);
       this.context.clearRect(0, 0, CANVAS.width, CANVAS.height);
-      this.context.beginPath();
-      this.context.arc(this.x, this.y, 10, 0, 2 * Math.PI, false);
-      this.context.lineWidth = lineThickness;
-      this.context.stroke();
+      if (sticker == "") {
+        this.context.beginPath();
+        this.context.arc(this.x, this.y, 10, 0, 2 * Math.PI, false);
+        this.context.lineWidth = lineThickness;
+        this.context.stroke();
+      } else {
+        ctx.font = "24px monospace";
+        ctx.fillText(sticker, this.x - 8, this.y + 16);
+      }
+
       ctx.drawImage(this.canvas, 0, 0);
     },
   };
 }
 
 CANVAS.addEventListener("tool-moved", () => {
-  if (cursorCommand != null && CONTEXT != null) {
-    cursorCommand.draw(CONTEXT);
+  if (CONTEXT != null) {
+    if (cursorCommand != null) cursorCommand.draw(CONTEXT);
   }
 });
 
@@ -132,10 +166,12 @@ CANVAS.addEventListener("pointerdown", (e) => {
   CURSOR.x = e.offsetX;
   CURSOR.y = e.offsetY;
 
-  const LINE = createDrawCommand(CURSOR.x, CURSOR.y, lineThickness);
-  currentLine = LINE;
-
-  DRAWINGS.push(LINE);
+  let new_drawing;
+  if (sticker == "") {
+    new_drawing = createLineCommand(CURSOR.x, CURSOR.y, lineThickness);
+  } else new_drawing = createStickerCommand(CURSOR.x, CURSOR.y, sticker);
+  currentDrawing = new_drawing;
+  DRAWINGS.push(new_drawing);
   REDO_DRAWINGS.length = 0;
 
   CANVAS.dispatchEvent(REDRAW_EVENT);
@@ -155,9 +191,7 @@ CANVAS.addEventListener("pointermove", (e) => {
       CURSOR.x = e.offsetX;
       CURSOR.y = e.offsetY;
 
-      if (currentLine == null) {
-        currentLine = createDrawCommand(CURSOR.x, CURSOR.y, lineThickness);
-      } else currentLine.drag(CURSOR.x, CURSOR.y);
+      if (currentDrawing != null) currentDrawing.drag(CURSOR.x, CURSOR.y);
 
       CANVAS.dispatchEvent(REDRAW_EVENT);
     }
@@ -166,7 +200,7 @@ CANVAS.addEventListener("pointermove", (e) => {
 
 CANVAS.addEventListener("pointerup", (_e) => {
   CURSOR.active = false;
-  currentLine = null;
+  currentDrawing = null;
   CANVAS.dispatchEvent(REDRAW_EVENT);
 });
 
@@ -179,7 +213,7 @@ CANVAS.addEventListener("drawing-changed", () => {
 
 const CLEAR_BUTTON = document.createElement("button");
 CLEAR_BUTTON.innerHTML = "clear";
-CLEAR_BUTTON.classList.add("button");
+CLEAR_BUTTON.classList.add("right-button");
 RIGHT_BUTTON_FLEXBOX.append(CLEAR_BUTTON);
 
 CLEAR_BUTTON.addEventListener("click", () => {
@@ -191,7 +225,7 @@ RIGHT_BUTTON_FLEXBOX.append(document.createElement("br"));
 
 const UNDO_BUTTON = document.createElement("button");
 UNDO_BUTTON.innerHTML = "undo";
-UNDO_BUTTON.classList.add("button");
+UNDO_BUTTON.classList.add("right-button");
 RIGHT_BUTTON_FLEXBOX.append(UNDO_BUTTON);
 
 UNDO_BUTTON.addEventListener("click", () => {
@@ -206,7 +240,7 @@ RIGHT_BUTTON_FLEXBOX.append(document.createElement("br"));
 
 const REDO_BUTTON = document.createElement("button");
 REDO_BUTTON.innerHTML = "redo";
-REDO_BUTTON.classList.add("button");
+REDO_BUTTON.classList.add("right-button");
 RIGHT_BUTTON_FLEXBOX.append(REDO_BUTTON);
 
 REDO_BUTTON.addEventListener("click", () => {
@@ -219,20 +253,50 @@ REDO_BUTTON.addEventListener("click", () => {
 
 const THIN_BUTTON = document.createElement("button");
 THIN_BUTTON.innerHTML = "thin";
-THIN_BUTTON.classList.add("button");
+THIN_BUTTON.classList.add("left-button");
 LEFT_BUTTON_FLEXBOX.append(THIN_BUTTON);
 
 THIN_BUTTON.addEventListener("click", () => {
   lineThickness = 2;
+  sticker = "";
 });
-
-LEFT_BUTTON_FLEXBOX.append(document.createElement("br"));
 
 const THICK_BUTTON = document.createElement("button");
 THICK_BUTTON.innerHTML = "thick";
-THICK_BUTTON.classList.add("button");
+THICK_BUTTON.classList.add("left-button");
 LEFT_BUTTON_FLEXBOX.append(THICK_BUTTON);
 
 THICK_BUTTON.addEventListener("click", () => {
   lineThickness = 4;
+  sticker = "";
+});
+
+const STICKER_BUTTON_1 = document.createElement("button");
+STICKER_BUTTON_1.innerHTML = "❤️";
+STICKER_BUTTON_1.classList.add("left-button");
+LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON_1);
+
+STICKER_BUTTON_1.addEventListener("click", () => {
+  sticker = "❤️";
+  CANVAS.dispatchEvent(MOVE_EVENT);
+});
+
+const STICKER_BUTTON_2 = document.createElement("button");
+STICKER_BUTTON_2.innerHTML = "😊";
+STICKER_BUTTON_2.classList.add("left-button");
+LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON_2);
+
+STICKER_BUTTON_2.addEventListener("click", () => {
+  sticker = "😊";
+  CANVAS.dispatchEvent(MOVE_EVENT);
+});
+
+const STICKER_BUTTON_3 = document.createElement("button");
+STICKER_BUTTON_3.innerHTML = "✨";
+STICKER_BUTTON_3.classList.add("left-button");
+LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON_3);
+
+STICKER_BUTTON_3.addEventListener("click", () => {
+  sticker = "✨";
+  CANVAS.dispatchEvent(MOVE_EVENT);
 });
