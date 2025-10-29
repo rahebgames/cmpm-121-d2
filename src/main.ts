@@ -41,11 +41,6 @@ function createLineCommand(
   };
 }
 
-// Credit: https://quickref.me/generate-a-random-floating-point-number-in-given-range.html
-function randomFloat(min: number, max: number): number {
-  return Math.random() * (max - min) + min;
-}
-
 //emoji constructor
 function createStickerCommand(
   x: number,
@@ -60,7 +55,7 @@ function createStickerCommand(
   NEW_CONTEXT.font = "32px monospace";
   NEW_CONTEXT.fillText(sticker, x - 8, y + 16);
 
-  let currentRotation = 0; // Start unrotated
+  let currentRotation = 0;
   const START_X = x;
 
   function renderAt(ctx: CanvasRenderingContext2D) {
