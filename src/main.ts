@@ -105,7 +105,7 @@ function createCursorCommand(
 function createSticker(stickerText: string) {
   const STICKER_BUTTON = document.createElement("button");
   STICKER_BUTTON.textContent = stickerText;
-  STICKER_BUTTON.classList.add("left-button");
+  STICKER_BUTTON.classList.add("small-button");
   LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON);
 
   STICKER_BUTTON.addEventListener("click", () => {
@@ -113,6 +113,9 @@ function createSticker(stickerText: string) {
     CANVAS.dispatchEvent(MOVE_EVENT);
   });
 }
+
+const CANVAS_SIZE = 256;
+const EXPORT_SIZE = 1024;
 
 let lineThickness: number = 2;
 
@@ -143,7 +146,6 @@ const LEFT_BUTTON_FLEXBOX = document.createElement("div");
 LEFT_BUTTON_FLEXBOX.id = "left-button-flexbox";
 CANVAS_FLEXBOX.appendChild(LEFT_BUTTON_FLEXBOX);
 
-const CANVAS_SIZE = 256;
 const CANVAS = document.createElement("canvas");
 CANVAS.id = "sketchpad";
 CANVAS.width = CANVAS_SIZE;
@@ -226,7 +228,7 @@ CANVAS.addEventListener("drawing-changed", () => {
 
 const CLEAR_BUTTON = document.createElement("button");
 CLEAR_BUTTON.textContent = "clear";
-CLEAR_BUTTON.classList.add("right-button");
+CLEAR_BUTTON.classList.add("small-button");
 RIGHT_BUTTON_FLEXBOX.append(CLEAR_BUTTON);
 
 CLEAR_BUTTON.addEventListener("click", () => {
@@ -236,7 +238,7 @@ CLEAR_BUTTON.addEventListener("click", () => {
 
 const UNDO_BUTTON = document.createElement("button");
 UNDO_BUTTON.textContent = "undo";
-UNDO_BUTTON.classList.add("right-button");
+UNDO_BUTTON.classList.add("small-button");
 RIGHT_BUTTON_FLEXBOX.append(UNDO_BUTTON);
 
 UNDO_BUTTON.addEventListener("click", () => {
@@ -249,7 +251,7 @@ UNDO_BUTTON.addEventListener("click", () => {
 
 const REDO_BUTTON = document.createElement("button");
 REDO_BUTTON.textContent = "redo";
-REDO_BUTTON.classList.add("right-button");
+REDO_BUTTON.classList.add("small-button");
 RIGHT_BUTTON_FLEXBOX.append(REDO_BUTTON);
 
 REDO_BUTTON.addEventListener("click", () => {
@@ -262,7 +264,7 @@ REDO_BUTTON.addEventListener("click", () => {
 
 const NEW_STICKER_BUTTON = document.createElement("button");
 NEW_STICKER_BUTTON.textContent = "create custom sticker";
-NEW_STICKER_BUTTON.classList.add("right-button");
+NEW_STICKER_BUTTON.classList.add("large-button");
 NEW_STICKER_BUTTON.style.fontSize = "small";
 RIGHT_BUTTON_FLEXBOX.append(NEW_STICKER_BUTTON);
 
@@ -274,9 +276,34 @@ NEW_STICKER_BUTTON.addEventListener("click", () => {
   }
 });
 
+const EXPORT_BUTTON = document.createElement("button");
+EXPORT_BUTTON.textContent = "export canvas";
+EXPORT_BUTTON.classList.add("large-button");
+EXPORT_BUTTON.style.fontSize = "medium";
+RIGHT_BUTTON_FLEXBOX.append(EXPORT_BUTTON);
+
+EXPORT_BUTTON.addEventListener("click", () => {
+  if (CONTEXT == null) return;
+
+  const EXPORT_CANVAS = document.createElement("canvas");
+  EXPORT_CANVAS.width = EXPORT_SIZE;
+  EXPORT_CANVAS.height = EXPORT_SIZE;
+
+  const SIZE_DIFF = EXPORT_SIZE / CANVAS_SIZE;
+  const EXPORT_CONTEXT = EXPORT_CANVAS.getContext("2d")!;
+  EXPORT_CONTEXT.scale(SIZE_DIFF, SIZE_DIFF);
+
+  for (const DRAWING of DRAWINGS) DRAWING.display(EXPORT_CONTEXT);
+
+  const ANCHOR = document.createElement("a");
+  ANCHOR.href = EXPORT_CANVAS.toDataURL("image/png");
+  ANCHOR.download = "sketchpad.png";
+  ANCHOR.click();
+});
+
 const THIN_BUTTON = document.createElement("button");
 THIN_BUTTON.textContent = "thin";
-THIN_BUTTON.classList.add("left-button");
+THIN_BUTTON.classList.add("small-button");
 LEFT_BUTTON_FLEXBOX.append(THIN_BUTTON);
 
 THIN_BUTTON.addEventListener("click", () => {
@@ -286,7 +313,7 @@ THIN_BUTTON.addEventListener("click", () => {
 
 const THICK_BUTTON = document.createElement("button");
 THICK_BUTTON.textContent = "thick";
-THICK_BUTTON.classList.add("left-button");
+THICK_BUTTON.classList.add("small-button");
 LEFT_BUTTON_FLEXBOX.append(THICK_BUTTON);
 
 THICK_BUTTON.addEventListener("click", () => {

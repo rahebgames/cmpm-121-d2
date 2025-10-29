@@ -39,14 +39,14 @@
   box-shadow: 5px 5px 5px black;
 }
 
-.left-button {
+.small-button {
   font-family: "Comic Sans MS";
   font-size: large;
   height: 48px;
   width: 64px;
 }
 
-.right-button {
+.large-button {
   font-family: "Comic Sans MS";
   font-size: large;
   height: 64px;
