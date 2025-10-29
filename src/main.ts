@@ -24,7 +24,7 @@ function createLineCommand(
   NEW_CANVAS.height = CANVAS_SIZE;
   const NEW_CONTEXT = NEW_CANVAS.getContext("2d")!;
   NEW_CONTEXT.lineWidth = thickness;
-  NEW_CONTEXT.strokeStyle = "black";
+  NEW_CONTEXT.strokeStyle = lineColor;
 
   NEW_CONTEXT.beginPath();
   NEW_CONTEXT.moveTo(x, y);
@@ -108,6 +108,7 @@ function createCursorCommand(
         this.context.beginPath();
         this.context.arc(this.x, this.y, 10, 0, 2 * Math.PI, false);
         this.context.lineWidth = lineThickness;
+        this.context.strokeStyle = lineColor;
         this.context.stroke();
       } else {
         ctx.font = "24px monospace";
@@ -142,6 +143,7 @@ const EXPORT_SIZE = 1024;
 const THIN_WIDTH = 2;
 const THICK_WIDTH = 6;
 let lineThickness: number = THIN_WIDTH;
+let lineColor = "black";
 
 const DRAWINGS: DrawCommand[] = [];
 const REDO_DRAWINGS: DrawCommand[] = [];
@@ -324,6 +326,18 @@ EXPORT_BUTTON.addEventListener("click", () => {
   ANCHOR.href = EXPORT_CANVAS.toDataURL("image/png");
   ANCHOR.download = "sketchpad.png";
   ANCHOR.click();
+});
+
+const COLOR_PICKER = document.createElement("input");
+COLOR_PICKER.type = "color";
+COLOR_PICKER.classList.add("button", "small-button", "marker-button");
+LEFT_BUTTON_FLEXBOX.appendChild(COLOR_PICKER);
+
+COLOR_PICKER.addEventListener("change", (e) => {
+  const target = e.target as HTMLInputElement | null;
+  if (target) {
+    lineColor = target.value;
+  }
 });
 
 const THIN_BUTTON = document.createElement("button");
