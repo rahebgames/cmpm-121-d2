@@ -18,8 +18,9 @@ let lineThickness: number = 2;
 const DRAWINGS: DrawCommand[] = [];
 const REDO_DRAWINGS: DrawCommand[] = [];
 let currentDrawing: DrawCommand | null = null;
-
 let cursorCommand: CursorCommand | null = null;
+
+const AVAILABLE_STICKERS: string[] = ["❤️", "😊", "✨"];
 let sticker: string = "";
 
 const REDRAW_EVENT = new Event("drawing-changed");
@@ -212,7 +213,7 @@ CANVAS.addEventListener("drawing-changed", () => {
 });
 
 const CLEAR_BUTTON = document.createElement("button");
-CLEAR_BUTTON.innerHTML = "clear";
+CLEAR_BUTTON.textContent = "clear";
 CLEAR_BUTTON.classList.add("right-button");
 RIGHT_BUTTON_FLEXBOX.append(CLEAR_BUTTON);
 
@@ -224,7 +225,7 @@ CLEAR_BUTTON.addEventListener("click", () => {
 RIGHT_BUTTON_FLEXBOX.append(document.createElement("br"));
 
 const UNDO_BUTTON = document.createElement("button");
-UNDO_BUTTON.innerHTML = "undo";
+UNDO_BUTTON.textContent = "undo";
 UNDO_BUTTON.classList.add("right-button");
 RIGHT_BUTTON_FLEXBOX.append(UNDO_BUTTON);
 
@@ -239,7 +240,7 @@ UNDO_BUTTON.addEventListener("click", () => {
 RIGHT_BUTTON_FLEXBOX.append(document.createElement("br"));
 
 const REDO_BUTTON = document.createElement("button");
-REDO_BUTTON.innerHTML = "redo";
+REDO_BUTTON.textContent = "redo";
 REDO_BUTTON.classList.add("right-button");
 RIGHT_BUTTON_FLEXBOX.append(REDO_BUTTON);
 
@@ -252,7 +253,7 @@ REDO_BUTTON.addEventListener("click", () => {
 });
 
 const THIN_BUTTON = document.createElement("button");
-THIN_BUTTON.innerHTML = "thin";
+THIN_BUTTON.textContent = "thin";
 THIN_BUTTON.classList.add("left-button");
 LEFT_BUTTON_FLEXBOX.append(THIN_BUTTON);
 
@@ -262,7 +263,7 @@ THIN_BUTTON.addEventListener("click", () => {
 });
 
 const THICK_BUTTON = document.createElement("button");
-THICK_BUTTON.innerHTML = "thick";
+THICK_BUTTON.textContent = "thick";
 THICK_BUTTON.classList.add("left-button");
 LEFT_BUTTON_FLEXBOX.append(THICK_BUTTON);
 
@@ -271,32 +272,14 @@ THICK_BUTTON.addEventListener("click", () => {
   sticker = "";
 });
 
-const STICKER_BUTTON_1 = document.createElement("button");
-STICKER_BUTTON_1.innerHTML = "❤️";
-STICKER_BUTTON_1.classList.add("left-button");
-LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON_1);
+for (const STICKER of AVAILABLE_STICKERS) {
+  const STICKER_BUTTON = document.createElement("button");
+  STICKER_BUTTON.textContent = STICKER;
+  STICKER_BUTTON.classList.add("left-button");
+  LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON);
 
-STICKER_BUTTON_1.addEventListener("click", () => {
-  sticker = "❤️";
-  CANVAS.dispatchEvent(MOVE_EVENT);
-});
-
-const STICKER_BUTTON_2 = document.createElement("button");
-STICKER_BUTTON_2.innerHTML = "😊";
-STICKER_BUTTON_2.classList.add("left-button");
-LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON_2);
-
-STICKER_BUTTON_2.addEventListener("click", () => {
-  sticker = "😊";
-  CANVAS.dispatchEvent(MOVE_EVENT);
-});
-
-const STICKER_BUTTON_3 = document.createElement("button");
-STICKER_BUTTON_3.innerHTML = "✨";
-STICKER_BUTTON_3.classList.add("left-button");
-LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON_3);
-
-STICKER_BUTTON_3.addEventListener("click", () => {
-  sticker = "✨";
-  CANVAS.dispatchEvent(MOVE_EVENT);
-});
+  STICKER_BUTTON.addEventListener("click", () => {
+    sticker = STICKER;
+    CANVAS.dispatchEvent(MOVE_EVENT);
+  });
+}
