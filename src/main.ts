@@ -13,50 +13,6 @@ interface CursorCommand {
   draw(ctx: CanvasRenderingContext2D): void;
 }
 
-let lineThickness: number = 2;
-
-const DRAWINGS: DrawCommand[] = [];
-const REDO_DRAWINGS: DrawCommand[] = [];
-let currentDrawing: DrawCommand | null = null;
-let cursorCommand: CursorCommand | null = null;
-
-const AVAILABLE_STICKERS: string[] = ["❤️", "😊", "✨"];
-let sticker: string = "";
-
-const REDRAW_EVENT = new Event("drawing-changed");
-const MOVE_EVENT = new Event("tool-moved");
-
-const OUTER_FLEXBOX = document.createElement("div");
-OUTER_FLEXBOX.id = "outer-flexbox";
-document.body.appendChild(OUTER_FLEXBOX);
-
-const TITLE = document.createElement("h1");
-TITLE.textContent = "Sticker Sketchpad";
-OUTER_FLEXBOX.appendChild(TITLE);
-
-const CANVAS_FLEXBOX = document.createElement("div");
-CANVAS_FLEXBOX.id = "canvas-flexbox";
-OUTER_FLEXBOX.appendChild(CANVAS_FLEXBOX);
-
-const LEFT_BUTTON_FLEXBOX = document.createElement("div");
-LEFT_BUTTON_FLEXBOX.id = "left-button-flexbox";
-CANVAS_FLEXBOX.appendChild(LEFT_BUTTON_FLEXBOX);
-
-const CANVAS_SIZE = 256;
-const CANVAS = document.createElement("canvas");
-CANVAS.id = "sketchpad";
-CANVAS.width = CANVAS_SIZE;
-CANVAS.height = CANVAS_SIZE;
-CANVAS_FLEXBOX.appendChild(CANVAS);
-
-const RIGHT_BUTTON_FLEXBOX = document.createElement("div");
-RIGHT_BUTTON_FLEXBOX.id = "right-button-flexbox";
-CANVAS_FLEXBOX.appendChild(RIGHT_BUTTON_FLEXBOX);
-
-const CONTEXT = CANVAS.getContext("2d");
-const CURSOR = { active: false, x: 0, y: 0 };
-CANVAS.style.cursor = "none";
-
 // line constructor
 function createLineCommand(
   x: number,
@@ -146,6 +102,62 @@ function createCursorCommand(
   };
 }
 
+function createSticker(stickerText: string) {
+  const STICKER_BUTTON = document.createElement("button");
+  STICKER_BUTTON.textContent = stickerText;
+  STICKER_BUTTON.classList.add("left-button");
+  LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON);
+
+  STICKER_BUTTON.addEventListener("click", () => {
+    sticker = stickerText;
+    CANVAS.dispatchEvent(MOVE_EVENT);
+  });
+}
+
+let lineThickness: number = 2;
+
+const DRAWINGS: DrawCommand[] = [];
+const REDO_DRAWINGS: DrawCommand[] = [];
+let currentDrawing: DrawCommand | null = null;
+let cursorCommand: CursorCommand | null = null;
+
+const AVAILABLE_STICKERS: string[] = ["❤️", "😊", "✨"];
+let sticker: string = "";
+
+const REDRAW_EVENT = new Event("drawing-changed");
+const MOVE_EVENT = new Event("tool-moved");
+
+const OUTER_FLEXBOX = document.createElement("div");
+OUTER_FLEXBOX.id = "outer-flexbox";
+document.body.appendChild(OUTER_FLEXBOX);
+
+const TITLE = document.createElement("h1");
+TITLE.textContent = "Sticker Sketchpad";
+OUTER_FLEXBOX.appendChild(TITLE);
+
+const CANVAS_FLEXBOX = document.createElement("div");
+CANVAS_FLEXBOX.id = "canvas-flexbox";
+OUTER_FLEXBOX.appendChild(CANVAS_FLEXBOX);
+
+const LEFT_BUTTON_FLEXBOX = document.createElement("div");
+LEFT_BUTTON_FLEXBOX.id = "left-button-flexbox";
+CANVAS_FLEXBOX.appendChild(LEFT_BUTTON_FLEXBOX);
+
+const CANVAS_SIZE = 256;
+const CANVAS = document.createElement("canvas");
+CANVAS.id = "sketchpad";
+CANVAS.width = CANVAS_SIZE;
+CANVAS.height = CANVAS_SIZE;
+CANVAS_FLEXBOX.appendChild(CANVAS);
+
+const RIGHT_BUTTON_FLEXBOX = document.createElement("div");
+RIGHT_BUTTON_FLEXBOX.id = "right-button-flexbox";
+CANVAS_FLEXBOX.appendChild(RIGHT_BUTTON_FLEXBOX);
+
+const CONTEXT = CANVAS.getContext("2d");
+const CURSOR = { active: false, x: 0, y: 0 };
+CANVAS.style.cursor = "none";
+
 CANVAS.addEventListener("tool-moved", () => {
   if (CONTEXT != null) {
     if (cursorCommand != null) cursorCommand.draw(CONTEXT);
@@ -222,8 +234,6 @@ CLEAR_BUTTON.addEventListener("click", () => {
   CANVAS.dispatchEvent(REDRAW_EVENT);
 });
 
-RIGHT_BUTTON_FLEXBOX.append(document.createElement("br"));
-
 const UNDO_BUTTON = document.createElement("button");
 UNDO_BUTTON.textContent = "undo";
 UNDO_BUTTON.classList.add("right-button");
@@ -237,8 +247,6 @@ UNDO_BUTTON.addEventListener("click", () => {
   }
 });
 
-RIGHT_BUTTON_FLEXBOX.append(document.createElement("br"));
-
 const REDO_BUTTON = document.createElement("button");
 REDO_BUTTON.textContent = "redo";
 REDO_BUTTON.classList.add("right-button");
@@ -249,6 +257,20 @@ REDO_BUTTON.addEventListener("click", () => {
     const LAST_DRAWING = REDO_DRAWINGS.pop();
     if (LAST_DRAWING) DRAWINGS.push(LAST_DRAWING);
     CANVAS.dispatchEvent(REDRAW_EVENT);
+  }
+});
+
+const NEW_STICKER_BUTTON = document.createElement("button");
+NEW_STICKER_BUTTON.textContent = "create custom sticker";
+NEW_STICKER_BUTTON.classList.add("right-button");
+NEW_STICKER_BUTTON.style.fontSize = "small";
+RIGHT_BUTTON_FLEXBOX.append(NEW_STICKER_BUTTON);
+
+NEW_STICKER_BUTTON.addEventListener("click", () => {
+  const NEW_STICKER = prompt("Custom sticker text", "🙃");
+  if (NEW_STICKER != null) {
+    AVAILABLE_STICKERS.push(NEW_STICKER);
+    createSticker(NEW_STICKER);
   }
 });
 
@@ -273,13 +295,5 @@ THICK_BUTTON.addEventListener("click", () => {
 });
 
 for (const STICKER of AVAILABLE_STICKERS) {
-  const STICKER_BUTTON = document.createElement("button");
-  STICKER_BUTTON.textContent = STICKER;
-  STICKER_BUTTON.classList.add("left-button");
-  LEFT_BUTTON_FLEXBOX.append(STICKER_BUTTON);
-
-  STICKER_BUTTON.addEventListener("click", () => {
-    sticker = STICKER;
-    CANVAS.dispatchEvent(MOVE_EVENT);
-  });
+  createSticker(STICKER);
 }
