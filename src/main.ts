@@ -41,7 +41,12 @@ function createLineCommand(
   };
 }
 
-// emoji constructor
+// Credit: https://quickref.me/generate-a-random-floating-point-number-in-given-range.html
+function randomFloat(min: number, max: number): number {
+  return Math.random() * (max - min) + min;
+}
+
+//emoji constructor
 function createStickerCommand(
   x: number,
   y: number,
@@ -55,10 +60,27 @@ function createStickerCommand(
   NEW_CONTEXT.font = "32px monospace";
   NEW_CONTEXT.fillText(sticker, x - 8, y + 16);
 
+  let currentRotation = 0; // Start unrotated
+  const START_X = x;
+
+  function renderAt(ctx: CanvasRenderingContext2D) {
+    ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(currentRotation);
+    ctx.fillText(sticker, -8, 16);
+    ctx.restore();
+  }
+
+  renderAt(NEW_CONTEXT);
+
   return {
-    drag(new_x: number, new_y: number) {
-      NEW_CONTEXT.clearRect(0, 0, CANVAS.width, CANVAS.height);
-      NEW_CONTEXT.fillText(sticker, new_x - 8, new_y + 16);
+    drag(new_x: number, _new_y: number) {
+      const DELTA_X = new_x - START_X;
+      const ROTATE_SENSITIVITY = 0.03;
+      currentRotation = DELTA_X * ROTATE_SENSITIVITY;
+
+      renderAt(NEW_CONTEXT);
       CANVAS.dispatchEvent(REDRAW_EVENT);
     },
 
@@ -197,6 +219,7 @@ CANVAS.addEventListener("pointerdown", (e) => {
   REDO_DRAWINGS.length = 0;
 
   CANVAS.dispatchEvent(REDRAW_EVENT);
+  CANVAS.setPointerCapture(e.pointerId);
 });
 
 CANVAS.addEventListener("pointermove", (e) => {
@@ -220,10 +243,11 @@ CANVAS.addEventListener("pointermove", (e) => {
   }
 });
 
-CANVAS.addEventListener("pointerup", (_e) => {
+CANVAS.addEventListener("pointerup", (e) => {
   CURSOR.active = false;
   currentDrawing = null;
   CANVAS.dispatchEvent(REDRAW_EVENT);
+  CANVAS.releasePointerCapture(e.pointerId);
 });
 
 CANVAS.addEventListener("drawing-changed", () => {
